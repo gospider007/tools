@@ -42,8 +42,8 @@ func NewCompressionWithByte(b byte) (Compression, error) {
 
 type CompressionConn struct {
 	net.Conn
-	w io.WriteCloser
-	r io.ReadCloser
+	w *WriterCompression
+	r *ReaderCompression
 }
 
 func (obj *CompressionConn) Read(b []byte) (n int, err error) {
@@ -52,11 +52,13 @@ func (obj *CompressionConn) Read(b []byte) (n int, err error) {
 func (obj *CompressionConn) Write(b []byte) (n int, err error) {
 	return obj.w.Write(b)
 }
+func (obj *CompressionConn) Flush() error {
+	return obj.w.Flush()
+}
 func (obj *CompressionConn) Close() error {
-	err := obj.Conn.Close()
 	obj.w.Close()
 	obj.r.Close()
-	return err
+	return obj.Conn.Close()
 }
 
 type ReaderCompression struct {
@@ -141,17 +143,29 @@ func (obj *WriterCompression) write(p []byte) (n int, err error) {
 	n, err = obj.encoder.Write(p)
 	if err != nil {
 		obj.err = err
-		return n, err
+		return
 	}
-	if obj.encoderFlush != nil {
-		err = obj.encoderFlush.Flush()
-	}
-	if obj.rawWFlush != nil {
-		err = obj.rawWFlush.Flush()
+	err = obj.Flush()
+	if err != nil {
+		obj.err = err
+		return
 	}
 	return
 }
 
+func (obj *WriterCompression) Flush() (err error) {
+	if obj.encoderFlush != nil {
+		if e := obj.encoderFlush.Flush(); e != nil {
+			err = e
+		}
+	}
+	if obj.rawWFlush != nil {
+		if e := obj.rawWFlush.Flush(); e != nil {
+			err = e
+		}
+	}
+	return
+}
 func (obj *WriterCompression) Close() error {
 	return obj.CloseWithError(nil)
 }
@@ -181,8 +195,8 @@ func (obj *WriterCompression) CloseWithError(err error) error {
 	if err2 := obj.encoder.Close(); err2 != nil {
 		err = err2
 	}
-	if err == nil && obj.rawWFlush != nil {
-		if err2 := obj.rawWFlush.Flush(); err2 != nil {
+	if err == nil {
+		if err2 := obj.Flush(); err2 != nil {
 			err = err2
 		}
 	}

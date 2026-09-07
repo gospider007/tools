@@ -41,7 +41,7 @@ func (obj *compression) OpenWriter(w io.Writer) (*WriterCompression, error) {
 }
 
 func (obj *compression) ConnCompression(conn net.Conn, connR io.Reader, connW io.Writer) (net.Conn, error) { // 前两个字节确定压缩方式
-	openReader := func(typ byte, r io.Reader) (io.ReadCloser, error) {
+	openReader := func(typ byte, r io.Reader) (*ReaderCompression, error) {
 		buf := make([]byte, 2)
 		n, err := r.Read(buf)
 		if err != nil {
