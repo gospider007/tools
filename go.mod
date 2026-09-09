@@ -9,7 +9,7 @@ require (
 	github.com/gospider007/re v0.0.0-20260824054539-32823144d328
 	github.com/klauspost/compress v1.20.0
 	github.com/minio/minlz v1.2.0
-	golang.org/x/image v0.45.0
-	golang.org/x/net v0.58.0
-	golang.org/x/text v0.41.0
+	golang.org/x/image v0.46.0
+	golang.org/x/net v0.59.0
+	golang.org/x/text v0.42.0
 )
